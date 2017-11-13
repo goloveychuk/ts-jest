@@ -111,9 +111,9 @@ export class Compiler {
         if (!fs.existsSync(fileName)) {
           return undefined;
         }
-        return ts.ScriptSnapshot.fromString(
-          fs.readFileSync(fileName).toString(),
-        ); //todo maybe put to files cache
+        const src = fs.readFileSync(fileName).toString();
+        that.files.update({ path: fileName, src });
+        return that.files.get(fileName).snapshot;
       }
       getCurrentDirectory = () => process.cwd();
       getCompilationSettings = () => that.options;
@@ -124,10 +124,10 @@ export class Compiler {
       readDirectory = ts.sys.readDirectory;
       // resolveTypeReferenceDirectives(typeDirectiveNames: string[], containingFile: string) {
       //     const resolved = typeDirectiveNames.map(directive =>
-      //         ts.resolveTypeReferenceDirective(directive, containingFile, options, ts.sys)
+      //         ts.resolveTypeReferenceDirective(directive, containingFile, that.options, ts.sys)
       //             .resolvedTypeReferenceDirective);
 
-      //     // resolved.forEach(res => {
+      //     resolved.forEach(res => {
       //     if (res && res.resolvedFileName) {
       //         fileDeps.add(containingFile, res.resolvedFileName);
       //     }
