@@ -37,6 +37,8 @@ export function process(
 
   if (processFile) {
     compiler.setOptions(compilerOptions);
+    compiler.setCustomTransformersPath(tsJestConfig.customTransformersPath);
+
     // const tsTranspiled = tsc.transpileModule(src, {
     //   compilerOptions,
     //   fileName: path,

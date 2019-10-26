@@ -60,6 +60,10 @@ export class Compiler {
   private options?: ts.CompilerOptions;
   private service: ts.LanguageService;
   private files: Files;
+  private customTransformersPath?: string;
+  private customTransformers?: (
+    program: ts.Program,
+  ) => () => ts.CustomTransformers;
 
   constructor(options?: ts.CompilerOptions) {
     this.files = new Files();
@@ -69,17 +73,30 @@ export class Compiler {
   setOptions(options: ts.CompilerOptions) {
     this.options = options;
   }
+  setCustomTransformersPath(path?: string) {
+    if (this.customTransformersPath === path) {
+      return;
+    }
+    if (path === undefined) {
+      this.customTransformers = undefined;
+      this.customTransformersPath = undefined;
+    } else {
+      this.customTransformersPath = path;
+      this.customTransformers = require(path);
+    }
+  }
   private createServiceHost() {
     const that = this;
 
     let service: ts.LanguageService;
 
     class ServiceHost implements ts.LanguageServiceHost {
-      // getCustomTransformers() {
-      //     return {
-      //         before: [tsruntimeTransformer(service.getProgram())]
-      //     }
-      // }
+      getCustomTransformers() {
+        if (that.customTransformers === undefined) {
+          return undefined;
+        }
+        return that.customTransformers(service.getProgram())();
+      }
       getScriptFileNames() {
         return that.files.getFileNames();
       }
@@ -94,9 +111,9 @@ export class Compiler {
         if (!fs.existsSync(fileName)) {
           return undefined;
         }
-        return ts.ScriptSnapshot.fromString(
-          fs.readFileSync(fileName).toString(),
-        ); //todo maybe put to files cache
+        const src = fs.readFileSync(fileName).toString();
+        that.files.update({ path: fileName, src });
+        return that.files.get(fileName).snapshot;
       }
       getCurrentDirectory = () => process.cwd();
       getCompilationSettings = () => that.options;
@@ -107,10 +124,10 @@ export class Compiler {
       readDirectory = ts.sys.readDirectory;
       // resolveTypeReferenceDirectives(typeDirectiveNames: string[], containingFile: string) {
       //     const resolved = typeDirectiveNames.map(directive =>
-      //         ts.resolveTypeReferenceDirective(directive, containingFile, options, ts.sys)
+      //         ts.resolveTypeReferenceDirective(directive, containingFile, that.options, ts.sys)
       //             .resolvedTypeReferenceDirective);
 
-      //     // resolved.forEach(res => {
+      //     resolved.forEach(res => {
       //     if (res && res.resolvedFileName) {
       //         fileDeps.add(containingFile, res.resolvedFileName);
       //     }

@@ -220,7 +220,7 @@ export function getTSConfig(globals, collectCoverage: boolean = false) {
   delete config.sourceMap;
   config.inlineSourceMap = true;
   config.inlineSources = true;
-
+  config.suppressOutputPathCheck = true;
   // the coverage report is broken if `.outDir` is set
   // see https://github.com/kulshekhar/ts-jest/issues/201
   // `.outDir` is removed even for test files as it affects with breakpoints
